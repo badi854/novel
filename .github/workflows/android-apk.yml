@@ -38,9 +38,12 @@ jobs:
           id
           useradd -m -s /bin/bash builder || true
           chown -R builder:builder "$GITHUB_WORKSPACE"
-          su - builder -c "python3 -m pip install --user -U pip setuptools wheel"
-          su - builder -c "python3 -m pip install --user -U buildozer cython"
-          su - builder -c "export PATH=\$HOME/.local/bin:\$PATH; cd $GITHUB_WORKSPACE/novel_mobile && buildozer -v android debug"
+          # Debian/Ubuntu 新版会启用 PEP668（Externally Managed Environment），需要允许 pip 写入。
+          # 这里用 PIP_BREAK_SYSTEM_PACKAGES=1 作为全局开关，确保 buildozer/p4a 内部的 pip --user 也能跑。
+          su - builder -c "export PIP_BREAK_SYSTEM_PACKAGES=1; python3 -m pip install --user -U pip setuptools wheel"
+          su - builder -c "export PIP_BREAK_SYSTEM_PACKAGES=1; python3 -m pip install --user -U buildozer cython"
+          su - builder -c "export PIP_BREAK_SYSTEM_PACKAGES=1; export PATH=\$HOME/.local/bin:\$PATH; cd $GITHUB_WORKSPACE/novel_mobile && buildozer -v android debug"
+
 
 
 
@@ -52,3 +55,4 @@ jobs:
           name: NovelMobile-apk
           path: novel_mobile/bin/*.apk
           if-no-files-found: error
+
