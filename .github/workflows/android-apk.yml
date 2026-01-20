@@ -36,7 +36,10 @@ jobs:
           id
           useradd -m -s /bin/bash builder || true
           chown -R builder:builder "$GITHUB_WORKSPACE"
-          su - builder -c "cd $GITHUB_WORKSPACE/novel_mobile && yes y | buildozer -v android debug"
+          # 镜像里的 buildozer 通常装在 /home/user/.venv/bin 下；切到 builder 后 PATH 会丢失，显式补回
+          ls -la /home/user/.venv/bin/buildozer || true
+          su - builder -c "export PATH=/home/user/.venv/bin:\$PATH; cd $GITHUB_WORKSPACE/novel_mobile && yes y | buildozer -v android debug"
+
 
 
 
