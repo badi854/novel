@@ -23,17 +23,22 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ~/.buildozer
-            ~/.gradle
-            ~/.cache/pip
+            /home/builder/.buildozer
+            /home/builder/.gradle
+            /home/builder/.cache/pip
           key: ${{ runner.os }}-buildozer-${{ hashFiles('novel_mobile/buildozer.spec') }}
           restore-keys: |
             ${{ runner.os }}-buildozer-
 
       - name: Build APK (debug)
-        working-directory: novel_mobile
         run: |
-          buildozer -v android debug
+          # buildozer 在 root 下会要求交互确认，CI 会 EOF 失败；所以创建普通用户执行
+          id
+          useradd -m -s /bin/bash builder || true
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+          su - builder -c "cd $GITHUB_WORKSPACE/novel_mobile && yes y | buildozer -v android debug"
+
+
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
