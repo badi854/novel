@@ -26,19 +26,22 @@ jobs:
             /home/builder/.buildozer
             /home/builder/.gradle
             /home/builder/.cache/pip
+            /home/builder/.local
           key: ${{ runner.os }}-buildozer-${{ hashFiles('novel_mobile/buildozer.spec') }}
           restore-keys: |
             ${{ runner.os }}-buildozer-
 
       - name: Build APK (debug)
         run: |
-          # buildozer 在 root 下会要求交互确认，CI 会 EOF 失败；所以创建普通用户执行
+          # 说明：容器默认以 root 运行，但 buildozer 在 root 下会交互确认；另外镜像自带的 buildozer 在 venv 内，会触发 pip --user 报错。
+          # 解决：创建普通用户，并用系统 python3 以 --user 方式安装 buildozer，再运行 buildozer。
           id
           useradd -m -s /bin/bash builder || true
           chown -R builder:builder "$GITHUB_WORKSPACE"
-          # 镜像里的 buildozer 通常装在 /home/user/.venv/bin 下；切到 builder 后 PATH 会丢失，显式补回
-          ls -la /home/user/.venv/bin/buildozer || true
-          su - builder -c "export PATH=/home/user/.venv/bin:\$PATH; cd $GITHUB_WORKSPACE/novel_mobile && yes y | buildozer -v android debug"
+          su - builder -c "python3 -m pip install --user -U pip setuptools wheel"
+          su - builder -c "python3 -m pip install --user -U buildozer cython"
+          su - builder -c "export PATH=\$HOME/.local/bin:\$PATH; cd $GITHUB_WORKSPACE/novel_mobile && buildozer -v android debug"
+
 
 
 
